@@ -33,9 +33,9 @@ zoom-slack-notifier 스킬을 사용하기 위한 환경 설정 방법입니다.
 
 **Activation** 탭에서 앱을 활성화하세요.
 
-## 2. 슬랙 웹훅 설정
+## 2. 슬랙 봇 설정
 
-### 2.1 Incoming Webhook 앱 추가
+### 2.1 슬랙 앱 생성
 
 1. [슬랙 API](https://api.slack.com/apps)에 접속
 2. **Create New App** 클릭
@@ -43,37 +43,44 @@ zoom-slack-notifier 스킬을 사용하기 위한 환경 설정 방법입니다.
 4. 앱 이름 입력 (예: "Zoom Meeting Notifier")
 5. 워크스페이스 선택 후 **Create App** 클릭
 
-### 2.2 Incoming Webhooks 활성화
+### 2.2 봇 토큰 권한 설정
 
-1. 좌측 메뉴에서 **Incoming Webhooks** 클릭
-2. **Activate Incoming Webhooks** 토글을 **On**으로 변경
-3. 페이지 하단 **Add New Webhook to Workspace** 클릭
-4. 알림을 받을 채널 선택 (예: #general, #meetings)
-5. **Allow** 클릭
+1. 좌측 메뉴에서 **OAuth & Permissions** 클릭
+2. **Scopes** 섹션으로 스크롤
+3. **Bot Token Scopes**에서 다음 권한 추가:
+   - `chat:write` - 메시지 전송
+   - `chat:write.public` - 공개 채널에 메시지 전송
 
-### 2.3 Webhook URL 복사
+### 2.3 워크스페이스에 앱 설치
 
-생성된 **Webhook URL**을 복사해두세요. 형식:
+1. 페이지 상단의 **Install to Workspace** 클릭
+2. **Allow** 클릭하여 권한 승인
+
+### 2.4 봇 토큰 복사
+
+**OAuth & Permissions** 페이지에서 **Bot User OAuth Token**을 복사해두세요. 형식:
 ```
-https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX
+xoxb-[숫자]-[숫자]-[영문/숫자 조합]
 ```
 
 ## 3. 환경변수 설정
 
 ### 3.1 .env 파일 생성
 
-프로젝트 루트 디렉토리에 `.env` 파일을 생성하세요:
+**프로젝트 루트 디렉토리**에 `.env` 파일을 생성하세요:
 
 ```bash
-# .env
+# .env (프로젝트 루트에 위치)
 ZOOM_CLIENT_ID=your_zoom_client_id_here
 ZOOM_CLIENT_SECRET=your_zoom_client_secret_here
 ZOOM_ACCOUNT_ID=your_zoom_account_id_here
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX
+SLACK_BOT_TOKEN=xoxb-your-bot-token-here
 SLACK_CHANNEL=#meetings
 ```
 
-**중요**: `.env` 파일은 절대 Git에 커밋하지 마세요! `.gitignore`에 추가하세요.
+**중요**:
+- `.env` 파일은 **프로젝트 루트**에 위치해야 합니다 (여러 스킬에서 공용으로 사용)
+- `.env` 파일은 절대 Git에 커밋하지 마세요! `.gitignore`에 추가하세요.
 
 ### 3.2 시스템 환경변수로 설정 (대안)
 
@@ -84,7 +91,7 @@ SLACK_CHANNEL=#meetings
 export ZOOM_CLIENT_ID="your_zoom_client_id_here"
 export ZOOM_CLIENT_SECRET="your_zoom_client_secret_here"
 export ZOOM_ACCOUNT_ID="your_zoom_account_id_here"
-export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
+export SLACK_BOT_TOKEN="xoxb-your-bot-token-here"
 export SLACK_CHANNEL="#meetings"
 ```
 
@@ -93,7 +100,7 @@ export SLACK_CHANNEL="#meetings"
 $env:ZOOM_CLIENT_ID="your_zoom_client_id_here"
 $env:ZOOM_CLIENT_SECRET="your_zoom_client_secret_here"
 $env:ZOOM_ACCOUNT_ID="your_zoom_account_id_here"
-$env:SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
+$env:SLACK_BOT_TOKEN="xoxb-your-bot-token-here"
 $env:SLACK_CHANNEL="#meetings"
 ```
 
@@ -169,14 +176,17 @@ crontab -e
 
 ### 슬랙 메시지 전송 실패
 
-- Webhook URL이 정확한지 확인
+- Bot Token이 정확한지 확인 (`xoxb-`로 시작해야 함)
 - 채널 이름이 `#`으로 시작하는지 확인
-- 슬랙 앱이 해당 채널에 접근 권한이 있는지 확인
+- 슬랙 앱이 워크스페이스에 설치되어 있는지 확인
+- 봇이 `chat:write` 및 `chat:write.public` 권한을 가지고 있는지 확인
+- 채널이 private일 경우, 봇을 채널에 초대했는지 확인 (`/invite @앱이름`)
 
 ### 환경변수를 찾을 수 없음
 
-- `.env` 파일이 올바른 위치에 있는지 확인
+- `.env` 파일이 **프로젝트 루트**에 있는지 확인
 - 환경변수 이름이 정확한지 확인 (대소문자 구분)
+  - `SLACK_WEBHOOK_URL` ❌ → `SLACK_BOT_TOKEN` ✅
 - `python-dotenv`가 설치되어 있는지 확인
 
 ### 시간대 문제

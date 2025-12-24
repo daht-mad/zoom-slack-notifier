@@ -32,19 +32,20 @@ git clone https://github.com/[사용자명]/zoom-slack-notifier.git
 다음 서비스의 API 키가 필요합니다:
 
 - **줌 API**: Server-to-Server OAuth 앱 생성
-- **슬랙 웹훅**: Incoming Webhook 설정
+- **슬랙 봇**: Bot Token 발급
 
 자세한 발급 방법은 [references/SETUP.md](references/SETUP.md)를 참고하세요.
 
 ### 2. 환경변수 설정
 
-프로젝트 루트에 `.env` 파일을 생성하세요:
+**프로젝트 루트**에 `.env` 파일을 생성하세요:
 
 ```bash
+# 프로젝트 루트/.env
 ZOOM_CLIENT_ID=your_zoom_client_id
 ZOOM_CLIENT_SECRET=your_zoom_client_secret
 ZOOM_ACCOUNT_ID=your_zoom_account_id
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX
+SLACK_BOT_TOKEN=xoxb-your-bot-token-here
 SLACK_CHANNEL=#meetings
 ```
 

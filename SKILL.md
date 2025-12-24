@@ -40,11 +40,11 @@ repo: daht-mad/zoom-slack-notifier
 먼저 필요한 API 키를 설정해야 합니다:
 
 ```bash
-# .env 파일 생성 또는 환경변수 설정
+# 프로젝트 루트/.env 파일 생성
 ZOOM_CLIENT_ID=your_zoom_client_id
 ZOOM_CLIENT_SECRET=your_zoom_client_secret
 ZOOM_ACCOUNT_ID=your_zoom_account_id
-SLACK_WEBHOOK_URL=your_slack_webhook_url
+SLACK_BOT_TOKEN=xoxb-your-bot-token-here
 SLACK_CHANNEL=#your-channel-name
 ```
 

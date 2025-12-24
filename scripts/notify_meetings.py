@@ -17,7 +17,7 @@ class ZoomSlackNotifier:
         self.zoom_client_id = os.getenv('ZOOM_CLIENT_ID')
         self.zoom_client_secret = os.getenv('ZOOM_CLIENT_SECRET')
         self.zoom_account_id = os.getenv('ZOOM_ACCOUNT_ID')
-        self.slack_webhook_url = os.getenv('SLACK_WEBHOOK_URL')
+        self.slack_bot_token = os.getenv('SLACK_BOT_TOKEN')
         self.slack_channel = os.getenv('SLACK_CHANNEL', '#general')
 
         self.validate_env()
@@ -32,13 +32,13 @@ class ZoomSlackNotifier:
             missing.append('ZOOM_CLIENT_SECRET')
         if not self.zoom_account_id:
             missing.append('ZOOM_ACCOUNT_ID')
-        if not self.slack_webhook_url:
-            missing.append('SLACK_WEBHOOK_URL')
+        if not self.slack_bot_token:
+            missing.append('SLACK_BOT_TOKEN')
 
         if missing:
             print(f"❌ 환경변수가 설정되지 않았습니다: {', '.join(missing)}")
-            print("\n.env 파일을 생성하거나 환경변수를 설정해주세요.")
-            print("자세한 내용은 references/SETUP.md를 참고하세요.")
+            print("\n프로젝트 루트의 .env 파일을 생성하거나 환경변수를 설정해주세요.")
+            print("자세한 내용은 .claude/skills/zoom-slack-notifier/references/SETUP.md를 참고하세요.")
             sys.exit(1)
 
     def get_access_token(self) -> str:
@@ -114,15 +114,12 @@ class ZoomSlackNotifier:
             print(f"❌ 줌 회의 목록 조회 실패: {e}")
             return []
 
-    def format_slack_message(self, meetings: List[Dict]) -> Dict:
+    def format_slack_message(self, meetings: List[Dict]) -> str:
         """슬랙 메시지 포맷팅"""
         today_str = datetime.now().strftime('%Y-%m-%d')
 
         if not meetings:
-            return {
-                "channel": self.slack_channel,
-                "text": f"📅 오늘의 줌 회의 ({today_str})\n\n오늘 예정된 회의가 없습니다. 😊"
-            }
+            return f"📅 오늘의 줌 회의 ({today_str})\n\n오늘 예정된 회의가 없습니다. 😊"
 
         message_blocks = [f"📅 오늘의 줌 회의 ({today_str})\n"]
 
@@ -144,20 +141,31 @@ class ZoomSlackNotifier:
 
         message_blocks.append(f"\n\n총 {len(meetings)}개의 회의가 예정되어 있습니다.")
 
-        return {
-            "channel": self.slack_channel,
-            "text": "".join(message_blocks)
+        return "".join(message_blocks)
+
+    def send_to_slack(self, message: str) -> bool:
+        """슬랙 봇 API로 메시지 전송"""
+        url = "https://slack.com/api/chat.postMessage"
+
+        headers = {
+            "Authorization": f"Bearer {self.slack_bot_token}",
+            "Content-Type": "application/json"
         }
 
-    def send_to_slack(self, message: Dict) -> bool:
-        """슬랙으로 메시지 전송"""
+        payload = {
+            "channel": self.slack_channel,
+            "text": message
+        }
+
         try:
-            response = requests.post(
-                self.slack_webhook_url,
-                json=message,
-                headers={'Content-Type': 'application/json'}
-            )
+            response = requests.post(url, headers=headers, json=payload)
             response.raise_for_status()
+            result = response.json()
+
+            if not result.get('ok'):
+                print(f"❌ 슬랙 API 에러: {result.get('error', 'Unknown error')}")
+                return False
+
             return True
         except requests.exceptions.RequestException as e:
             print(f"❌ 슬랙 메시지 전송 실패: {e}")
@@ -190,12 +198,22 @@ class ZoomSlackNotifier:
 
 def main():
     """CLI 진입점"""
-    # .env 파일이 있으면 로드 (python-dotenv 사용 시)
+    # 프로젝트 루트의 .env 파일 로드
     try:
         from dotenv import load_dotenv
-        load_dotenv()
+        # 스크립트 위치에서 3단계 상위 (프로젝트 루트)로 이동
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
+        env_path = os.path.join(project_root, '.env')
+
+        if os.path.exists(env_path):
+            load_dotenv(env_path)
+            print(f"✓ .env 파일 로드됨: {env_path}")
+        else:
+            print(f"⚠️  .env 파일을 찾을 수 없습니다: {env_path}")
+            print("프로젝트 루트에 .env 파일을 생성해주세요.")
     except ImportError:
-        pass
+        print("⚠️  python-dotenv가 설치되지 않았습니다. 환경변수를 직접 설정해주세요.")
 
     notifier = ZoomSlackNotifier()
     notifier.run()
