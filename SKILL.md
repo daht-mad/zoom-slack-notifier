@@ -3,6 +3,7 @@ name: zoom-slack-notifier
 description: 매일 아침 오늘 예정된 줌 회의 목록을 자동으로 확인하여 슬랙 채널에 알림을 보내는 스킬
 version: 1.0.0
 author: dahye.dyan
+repo: daht-mad/zoom-slack-notifier
 ---
 
 # zoom-slack-notifier
